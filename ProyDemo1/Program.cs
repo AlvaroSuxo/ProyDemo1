@@ -1,6 +1,28 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using ProyDemo1.Data;
+using ProyDemo1.Data.Repository;
+
 var builder = WebApplication.CreateBuilder(args);
 
+
+//var scopeFactory = builder.Services.getService<IserviceEscopeFactory>();
+//using (var scope = scopeFactory.CreateScope())
+
+   // var seeder = scope.ServiceProvider.GetServices<SeedDb>();
+//seeder.SeedDbAsyn
+
+
 // Add services to the container.
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+builder.Services.AddDbContext<DataContext>(options => options.UseSqlServer(connectionString));
+
+builder.Services .AddScoped<IRepository, Repository>();  //Para instanciar los repositorios
+    
+
+
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
