@@ -1,21 +1,24 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProyDemo1.Data.Entity;
+using ProyDemo1.Data.Helper;
 using ProyDemo1.Data.Repository;
 
 namespace ProyDemo1.Controllers
 {
     public class ProductController : Controller
     {
-        private readonly IRepository repository;
+        private readonly IProductRepository productRepository;
+        private readonly IUserHelper userHelper;
 
-        public ProductController(IRepository repository)
+        public ProductController(IProductRepository productRepository,IUserHelper userHelper)
         {
-            this.repository = repository;
+            this.productRepository = productRepository;
+            this.userHelper = userHelper;
         }
         public IActionResult Index()
         {
-            return View(this.repository.GetProducts());
+            return View(this.productRepository .GetAll());
         }
         public IActionResult Details(int? Id)
         {

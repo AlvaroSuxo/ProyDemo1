@@ -19,9 +19,9 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<DataContext>(options => options.UseSqlServer(connectionString));
 
-builder.Services .AddScoped<IRepository, Repository>();  //Para instanciar los repositorios
-    
-
+builder.Services .AddScoped<IProductRepository , ProductRepository>();  //Para instanciar los repositorios
+builder.Services.AddScoped<ICityRepository, CityRepository>();
+builder.Services.AddScoped<ICountryRepository, CountryRepository>();
 
 builder.Services.AddControllersWithViews();
 
