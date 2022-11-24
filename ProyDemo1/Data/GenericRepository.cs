@@ -2,23 +2,23 @@
 
 namespace ProyDemo1.Data
 {
-    public class GenericRepository<T> : IGenericRepository<T> where T :class, IEntity
+    public class GenericRepository<T> : IGenericRepository<T> where T : class, IEntity
     {
         private readonly DataContext context;
-
         public GenericRepository(DataContext context)
         {
             this.context = context;
         }
 
-        public Task<T> CreateAsync(T entity)
+        public async Task<T> CreateAsync(T entity)
         {
-            throw new NotImplementedException();
+            await this.context.Set<T>().AddAsync(entity);
+            await SaveAllAsync();
         }
-
-        public Task<T> DeleteAsync(T entity)
+        public async Task<T> DeleteAsync(T entity)
         {
-            throw new NotImplementedException();
+            await this.context.Set<T>().AddAsync(entity);
+            await SaveAllAsync();
         }
 
         public Task<bool> ExistAsync(int id)

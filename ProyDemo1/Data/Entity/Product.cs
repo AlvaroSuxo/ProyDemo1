@@ -33,5 +33,6 @@ namespace ProyDemo1.Data.Entity
         [Required(ErrorMessage = "El campo {0} es requerido...")]
         [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = false)]
         public double Stock { get; set; }
+        public User User { get; set; }
     }
 }

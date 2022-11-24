@@ -1,25 +1,31 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using ProyDemo1.Data.Entity;
 using ProyDemo1.Data.Helper;
 using ProyDemo1.Data.Repository;
+using ProyDemo1.Models;
 
 namespace ProyDemo1.Controllers
 {
+    [Authorize]
     public class ProductController : Controller
     {
         private readonly IProductRepository productRepository;
-        private readonly IUserHelper userHelper;
 
-        public ProductController(IProductRepository productRepository,IUserHelper userHelper)
+        public IUserHelper UserHelper { get; }
+
+        public ProductController(IProductRepository productRepository, IUserHelper userHelper)
         {
             this.productRepository = productRepository;
-            this.userHelper = userHelper;
+            UserHelper = userHelper;
         }
+
         public IActionResult Index()
         {
-            return View(this.productRepository .GetAll());
+            return View(this.productRepository.GetAll());
         }
+
         public IActionResult Details(int? Id)
         {
             if (Id == null)
@@ -27,7 +33,7 @@ namespace ProyDemo1.Controllers
                 return NotFound();
             }
 
-            var product = this.repository.GetProduct(Id.Value);
+            var product = this.productRepository.GetByIdAsync(Id.Value);
             if (product == null)
             {
                 return NotFound();
@@ -42,52 +48,118 @@ namespace ProyDemo1.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(Product product)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(ProductViewModel view)
         {
             if (ModelState.IsValid)
             {
+                var path = string.Empty;
+                if (view.ImageFile != null && view.ImageFile.Length > 0)
+                {
 
-                this.repository.AddProduct(product);
-                await this.repository.SaveAllAsing();
+
+                    var guid = Guid.NewGuid().ToString();
+                    var file = $"{guid}.png";
+
+                    path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot\\Image\\Product", file);
+
+                    using (var stream = new FileStream(path, FileMode.Create))
+                    {
+                        await view.ImageFile.CopyToAsync(stream);
+                    }
+                    path = $"~/Image/Product/{file}";
+                }
+                //TODO: pendiente el cambio de: This.User.Identity.Name
+                view.User = await this.UserHelper.GetUserByEmailAsync("sergiourquidi@gmail.com");
+                var product = this.ToProduct(view, path);
+                await this.productRepository.CreateAsync(product);
                 return RedirectToAction(nameof(Index));
             }
-            return View(product);
+            return View(view);
+        }
+        private Product ToProduct(ProductViewModel view, string path)
+        {
+            return new Product
+            {
+                Id = view.Id,
+                ImageUrl = path,
+                IsActive = view.IsActive,
+                LastPurchase = view.LastPurchase,
+                LastSale = view.LastSale,
+                Name = view.Name,
+                Price = view.Price,
+                Stock = view.Stock,
+                User = view.User
+            };
         }
 
-        public IActionResult Edit(int? Id)
+        [HttpGet]
+        public async Task<IActionResult> Edit(int? Id)
         {
             if (Id == null)
             {
                 return NotFound();
             }
 
-            var product = this.repository.GetProduct(Id.Value);
+            var product = await this.productRepository.GetByIdAsync(Id.Value);
             if (product == null)
             {
                 return NotFound();
             }
-            return View(product);
+
+            var view = this.ToProductViewModel(product);
+            return View(view);
         }
+
+        private ProductViewModel ToProductViewModel(Product product)
+        {
+            return new ProductViewModel
+            {
+                Id = product.Id,
+                ImageUrl = product.ImageUrl,
+                IsActive = product.IsActive,
+                LastPurchase = product.LastPurchase,
+                LastSale = product.LastSale,
+                Name = product.Name,
+                Price = product.Price,
+                Stock = product.Stock,
+                User = product.User
+            };
+        }
+
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Product product)
+        public async Task<IActionResult> Edit(ProductViewModel view)
         {
             if (ModelState.IsValid)
             {
                 try
                 {
+                    var path = view.ImageUrl;
 
-                    //TODO: pendiente el cambio de: This
+                    if (view.ImageFile != null && view.ImageFile.Length > 0)
+                    {
+                        var guid = Guid.NewGuid().ToString();
+                        var file = $"{guid}.png";
 
-                    this.repository.UpdateProduct(product);
-                    await this.repository.SaveAllAsing();
-                    return RedirectToAction(nameof(Index));
+                        path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot\\Image\\Product", file);
 
+                        using (var stream = new FileStream(path, FileMode.Create))
+                        {
+                            await view.ImageFile.CopyToAsync(stream);
+                        }
+                        path = $"~/Image/Product/{file}";
+                    }
+                    //TODO: pendiente el cambio de: This.User.Identity.Name
+                    view.User = await this.UserHelper.GetUserByEmailAsync("sergiourquidi@gmail.com");
+                    var product = this.ToProduct(view, path);
+                    await this.productRepository.UpdateAsync(product);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (this.repository.ProductExists(product.Id))
+                    if (!await this.productRepository.ExistAsync(view.Id))
                     {
                         return NotFound();
                     }
@@ -98,31 +170,35 @@ namespace ProyDemo1.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(product);
-
+            return View(view);
         }
+
         [HttpGet]
-        public IActionResult Delete(int? Id)
+        public async Task<IActionResult> Delete(int? Id)
         {
             if (Id == null)
             {
                 return NotFound();
             }
 
-            var product = this.productRepository.GetByIdAsync(Id.Value);
+            var product = await this.productRepository.GetByIdAsync(Id.Value);
             if (product == null)
             {
                 return NotFound();
             }
             return View(product);
         }
+
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int Id)
         {
             var product = await this.productRepository.GetByIdAsync(Id);
-            await this.productRepository.DeleteAsync(Id);
+            await this.productRepository.DeleteAsync(product);
             return RedirectToAction(nameof(Index));
+
         }
+
+
     }
 }

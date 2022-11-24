@@ -8,6 +8,6 @@ namespace ProyDemo1.Data.Repository
         {
 
         }
-    {
+    
     }
 }

@@ -5,7 +5,7 @@ namespace ProyDemo1.Models
 {
     public class ProductViewModel : Product
     {
-        [Display(namespace = "Imagen")]
+        [Display(Name = "Imagen")]
         public IFormFile ImageFile { get; set; }
     }
 }
